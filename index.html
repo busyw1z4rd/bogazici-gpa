@@ -5,84 +5,359 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bogazici GPA Calculator - Advanced</title>
 <link rel="stylesheet" href="styles.css" />
+
+<style>
+  #gandalfGif {
+    max-width: 300px;
+    margin: 1em auto;
+    display: none;
+    border-radius: 12px;
+  }
+  #passPhoto {
+    max-width: 300px;
+    margin: 1em auto;
+    display: none;
+    border-radius: 12px;
+  }
+  #gandalfMessage {
+    color: #1F3281;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 0.5em;
+    font-size: 1.2em;
+  }
+  #musicControls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1F3281;
+    border-radius: 10px;
+    padding: 8px 14px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    display: flex;
+    gap: 14px;
+    z-index: 10000;
+    user-select: none;
+  }
+  #musicControls button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.25s ease;
+    padding: 0;
+    color: white;
+  }
+  #musicControls button.enabled,
+  #musicControls button:hover:not(:disabled) {
+    opacity: 1;
+  }
+  #musicControls button:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  #musicControls svg {
+    width: 24px;
+    height: 24px;
+    fill: white;
+  }
+</style>
+
 </head>
 <body>
 
 <button id="darkModeToggle" title="Toggle Dark Mode">Dark Mode</button>
 
-<h1>Bogazici GPA Calculator - Advanced</h1>
+<section id="intro" style="max-width:700px; margin: 1em auto; padding:1em; background:#e8f0fe; border-radius:10px; color:#1F3281;">
+  <h2>Are you a REAL Boğaziçi Student?</h2>
+  <p>Test your knowledge about campus buildings and events!</p>
 
-<div id="termsContainer">
-  <!-- Term buttons added dynamically here -->
-  <button id="addTermBtn" class="term-btn" title="Add new term">+ Add Term</button>
-  <button id="prevTermsBtn" class="term-btn" title="Show Previous Terms Summary" style="background:#666; margin-left:10px;">
-    Previous Terms Summary
-  </button>
+  <div id="quiz">
+    <div class="question" data-index="0">
+      <p><strong>1. Which building is the ETA-B Building?</strong></p>
+      <img src="first_q.png" alt="ETA-B Building" style="max-width:100%; height:auto; margin-bottom:0.5em; border-radius:8px;" />
+      <button class="quiz-btn" data-answer="false">A) 1</button>
+      <button class="quiz-btn" data-answer="false">B) 2</button>
+      <button class="quiz-btn" data-answer="true">C) 3</button>
+      <button class="quiz-btn" data-answer="false">D) 4</button>
+    </div>
+
+    <div class="question" data-index="1" style="display:none;">
+      <p><strong>2. Who is the Boğaziçi's Rectorate?</strong></p>
+      <button class="quiz-btn" data-answer="false">A) Naci İnci</button>
+      <button class="quiz-btn" data-answer="false">B) İnci Naci</button>
+      <button class="quiz-btn" data-answer="true">C) No one</button>
+      <button class="quiz-btn" data-answer="false">D) İnci Küpeli Kız</button>
+    </div>
+
+    <div class="question" data-index="2" style="display:none;">
+      <p><strong>3. Where is Kilyos?</strong></p>
+      <button class="quiz-btn" data-answer="true">A) Kilyos</button>
+    </div>
+
+    <div id="quizResult" style="margin-top:1em; font-weight:bold;"></div>
+  </div>
+
+  <img id="gandalfGif" src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWczY3YzcDllaGowcjc0enljN2g1enpuaHplNXp6MDFpaWIyNXRpMyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/njYrp176NQsHS/giphy.gif" alt="You shall not pass!" />
+  <img id="passPhoto" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWJ0k7ksvu1ZYVQagLtBPDNtdF0vak8knywg&s" alt="Congratulations!" />
+  <div id="gandalfMessage"></div>
+
+  <audio id="failAudio" src="https://www.myinstants.com/media/sounds/you-shall-not-pass.mp3" preload="auto"></audio>
+</section>
+
+<!-- Calculator container - initially hidden -->
+<div id="calculatorSection" style="display:none;">
+
+  <h1>Bogazici GPA Calculator - Advanced</h1>
+
+  <div id="termsContainer" style="max-width:700px; margin: 0 auto 1em;">
+    <button id="addTermBtn" class="term-btn" title="Add new term">+ Add Term</button>
+    <button id="prevTermsBtn" class="term-btn" title="Show Previous Terms Summary" style="background:#666; margin-left:10px;">
+      Previous Terms Summary
+    </button>
+  </div>
+
+  <form id="courseForm" style="max-width:700px; margin: 0 auto 1em;">
+    <label for="courseName">Course Name (Uppercase only):</label>
+    <input type="text" id="courseName" maxlength="10" placeholder="E.g. PSY101" required autocomplete="off" />
+
+    <label for="credits">Credits:</label>
+    <input type="number" id="credits" min="1" max="20" placeholder="E.g. 3" required />
+
+    <label for="grade">Grade:</label>
+    <select id="grade" required>
+      <option value="">Select grade</option>
+      <option value="4">AA</option>
+      <option value="3.5">BA</option>
+      <option value="3">BB</option>
+      <option value="2.5">CB</option>
+      <option value="2">CC</option>
+      <option value="1.5">DC</option>
+      <option value="1">DD</option>
+      <option value="0">F</option>
+      <option value="PF">Pass/Fail</option>
+    </select>
+
+    <button type="submit">Add Course</button>
+  </form>
+
+  <form id="prevTermSummaryForm" title="Add previous term summary" style="max-width:700px; margin: 0 auto 1em;">
+    <h3>Add Previous Term Summary (without individual courses)</h3>
+    <label for="prevTermName">Term Name:</label>
+    <input type="text" id="prevTermName" maxlength="20" placeholder="E.g. Fall 2023" autocomplete="off" required />
+
+    <label for="prevTermCredits">Total Credits Earned:</label>
+    <input type="number" id="prevTermCredits" min="1" max="200" placeholder="E.g. 30" required />
+
+    <label for="prevTermGPA">Term GPA:</label>
+    <input type="number" id="prevTermGPA" min="0" max="4" step="0.01" placeholder="E.g. 3.42" required />
+
+    <button type="submit">Add Previous Term</button>
+  </form>
+
+  <table id="coursesTable" style="display:none; max-width:700px; margin: 0 auto;">
+    <thead>
+      <tr>
+        <th>Course</th>
+        <th>Credits</th>
+        <th>Grade</th>
+        <th>Pass/Fail</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="result" id="gpaResult" style="display:none; max-width:700px; margin: 1em auto; font-weight:bold;"></div>
+  <div id="cumulativeGPA" style="display:none; max-width:700px; margin: 1em auto; font-weight:600;"></div>
+
+  <div style="text-align:center; max-width:700px; margin: 1.5em auto;">
+    <button id="exportCSVBtn" title="Export current term courses as CSV">Export Current Term CSV</button>
+  </div>
+  <div style="text-align:center; max-width:700px; margin: 1em auto;">
+    <button id="clearDataBtn" title="Clear all saved data and reset">Clear All Data</button>
+  </div>
+
+  <!-- Music Controls -->
+  <div id="musicControls" aria-label="Music controls">
+    <button id="pausePlayBtn" aria-label="Play music" disabled>
+      <!-- Play icon -->
+      <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+      <!-- Pause icon -->
+      <svg id="pauseIcon" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+    </button>
+    <button id="nextTrackBtn" aria-label="Next track" disabled>
+      <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
+    </button>
+  </div>
+
 </div>
 
-<form id="courseForm">
-  <label for="courseName">Course Name (Uppercase only):</label>
-  <input type="text" id="courseName" maxlength="10" placeholder="E.g. PSY101" required autocomplete="off" />
+<audio id="audioPlayer" preload="auto" style="display:none;"></audio>
 
-  <label for="credits">Credits:</label>
-  <input type="number" id="credits" min="1" max="20" placeholder="E.g. 3" required />
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Shuffle helper function
+  function shuffle(array) {
+    const arr = array.slice();
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
 
-  <label for="grade">Grade:</label>
-  <select id="grade" required>
-    <option value="">Select grade</option>
-    <option value="4">AA</option>
-    <option value="3.5">BA</option>
-    <option value="3">BB</option>
-    <option value="2.5">CB</option>
-    <option value="2">CC</option>
-    <option value="1.5">DC</option>
-    <option value="1">DD</option>
-    <option value="0">F</option>
-    <option value="PF">Pass/Fail</option>
-  </select>
+  // Local audio playlist (put files in musics/ folder)
+  const playlist = [
+    'musics/music_1.mp3',
+    'musics/music_2.mp3',
+    'musics/music_3.mp3',
+    'musics/music_4.mp3',
+    'musics/music_5.mp3',
+    'musics/music_6.mp3',
+    'musics/music_7.mp3'
+  ];
 
-  <button type="submit">Add Course</button>
-</form>
+  const audioPlayer = document.getElementById('audioPlayer');
+  const pausePlayBtn = document.getElementById('pausePlayBtn');
+  const nextTrackBtn = document.getElementById('nextTrackBtn');
+  const playIcon = document.getElementById('playIcon');
+  const pauseIcon = document.getElementById('pauseIcon');
 
-<!-- Previous Term Summary Form -->
-<form id="prevTermSummaryForm" title="Add previous term summary">
-  <h3>Add Previous Term Summary (without individual courses)</h3>
-  <label for="prevTermName">Term Name:</label>
-  <input type="text" id="prevTermName" maxlength="20" placeholder="E.g. Fall 2023" autocomplete="off" required />
+  let currentPlaylistOrder = [];
+  let currentIndex = 0;
+  let isPlaying = false;
+  let isFirstPassPlayed = false;
 
-  <label for="prevTermCredits">Total Credits Earned:</label>
-  <input type="number" id="prevTermCredits" min="1" max="200" placeholder="E.g. 30" required />
+  function startPlaylist() {
+    currentPlaylistOrder = shuffle(playlist);
+    currentIndex = 0;
+    playCurrentIndex();
+    enableMusicControls(true);
+  }
 
-  <label for="prevTermGPA">Term GPA:</label>
-  <input type="number" id="prevTermGPA" min="0" max="4" step="0.01" placeholder="E.g. 3.42" required />
+  function playCurrentIndex() {
+    if (currentPlaylistOrder.length === 0) return;
+    audioPlayer.src = currentPlaylistOrder[currentIndex];
+    audioPlayer.play();
+    isPlaying = true;
+    updatePlayPauseButton();
+  }
 
-  <button type="submit">Add Previous Term</button>
-</form>
+  function playNextInPlaylist() {
+    currentIndex++;
+    if (currentIndex >= currentPlaylistOrder.length) {
+      currentPlaylistOrder = shuffle(playlist);
+      currentIndex = 0;
+    }
+    playCurrentIndex();
+  }
 
-<table id="coursesTable" style="display:none;">
-  <thead>
-    <tr>
-      <th>Course</th>
-      <th>Credits</th>
-      <th>Grade</th>
-      <th>Pass/Fail</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  function togglePlayPause() {
+    if (isPlaying) {
+      audioPlayer.pause();
+      isPlaying = false;
+    } else {
+      audioPlayer.play();
+      isPlaying = true;
+    }
+    updatePlayPauseButton();
+  }
 
-<div class="result" id="gpaResult" style="display:none;"></div>
-<div id="cumulativeGPA" style="display:none;"></div>
+  function updatePlayPauseButton() {
+    if (isPlaying) {
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'inline';
+      pausePlayBtn.setAttribute('aria-label', 'Pause music');
+    } else {
+      playIcon.style.display = 'inline';
+      pauseIcon.style.display = 'none';
+      pausePlayBtn.setAttribute('aria-label', 'Play music');
+    }
+  }
 
-<div style="text-align:center; margin-top:1.5em;">
-  <button id="exportCSVBtn" title="Export current term courses as CSV">Export Current Term CSV</button>
-</div>
-<div style="text-align:center; margin-top:1em;">
-  <button id="clearDataBtn" title="Clear all saved data and reset">Clear All Data</button>
-</div>
+  function enableMusicControls(enable) {
+    pausePlayBtn.disabled = !enable;
+    nextTrackBtn.disabled = !enable;
+    pausePlayBtn.classList.toggle('enabled', enable);
+    nextTrackBtn.classList.toggle('enabled', enable);
+  }
 
-<script src="script.js"></script>
+  pausePlayBtn.addEventListener('click', togglePlayPause);
+  nextTrackBtn.addEventListener('click', () => {
+    if (isFirstPassPlayed) {
+      playNextInPlaylist();
+    }
+  });
+
+  audioPlayer.addEventListener('ended', () => {
+    if (isFirstPassPlayed) {
+      playNextInPlaylist();
+    }
+  });
+
+  // Quiz gating logic
+  const questions = document.querySelectorAll('#quiz .question');
+  const quizResult = document.getElementById('quizResult');
+  const gandalfGif = document.getElementById('gandalfGif');
+  const gandalfMessage = document.getElementById('gandalfMessage');
+  const passPhoto = document.getElementById('passPhoto');
+  const failAudio = document.getElementById('failAudio');
+  const calculatorSection = document.getElementById('calculatorSection');
+
+  let currentQuestion = 0;
+  let score = 0;
+
+  questions.forEach(question => {
+    const buttons = question.querySelectorAll('.quiz-btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.getAttribute('data-answer') === 'true') {
+          score++;
+        }
+        question.style.display = 'none';
+        currentQuestion++;
+        if (currentQuestion < questions.length) {
+          questions[currentQuestion].style.display = 'block';
+        } else {
+          showResult();
+        }
+      });
+    });
+  });
+
+  function showResult() {
+    if (score >= 2) {
+      quizResult.textContent = `You scored ${score} out of ${questions.length}. Perfect! You are a REAL Boğaziçi student! 🎉`;
+      gandalfGif.style.display = 'none';
+      gandalfMessage.textContent = '';
+      passPhoto.style.display = 'block';
+      failAudio.pause();
+      failAudio.currentTime = 0;
+      calculatorSection.style.display = 'block';
+
+      isFirstPassPlayed = true;
+      startPlaylist();
+
+    } else {
+      quizResult.textContent = `You scored ${score} out of ${questions.length}. YOU SHALL NOT PASS! 🧙‍♂️`;
+      gandalfGif.style.display = 'block';
+      gandalfMessage.textContent = 'You need at least 2 correct answers to access the GPA Calculator.';
+      passPhoto.style.display = 'none';
+      calculatorSection.style.display = 'none';
+
+      isFirstPassPlayed = false;
+      enableMusicControls(false);
+      failAudio.play();
+    }
+  }
+});
+</script>
 
 </body>
 </html>
