@@ -555,3 +555,24 @@ prevTermsBtn.addEventListener('click', () => {
     showPreviousTermsView();
   }
 });
+const clearDataBtn = document.getElementById('clearDataBtn');
+
+clearDataBtn.addEventListener('click', () => {
+  if (confirm('Are you sure you want to clear all saved data? This cannot be undone.')) {
+    localStorage.removeItem('bogaziciGPAData');
+    localStorage.removeItem('bogaziciGPADarkMode');
+    // Reset in-memory data
+    terms = {};
+    currentTerm = null;
+    termCounter = 0;
+    showingPrevTerms = false;
+    // Clear UI
+    courseForm.reset();
+    prevTermSummaryForm.reset();
+    updateUI();
+    // Reset dark mode to light
+    document.body.classList.remove('dark');
+    darkModeToggle.textContent = 'Dark Mode';
+    alert('All data cleared. The app has been reset.');
+  }
+});
