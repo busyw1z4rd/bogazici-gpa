@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bogazici GPA Calculator - Advanced</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<button id="darkModeToggle" title="Toggle Dark Mode">Dark Mode</button>
+
+<h1>Bogazici GPA Calculator - Advanced</h1>
+
+<div id="termsContainer">
+  <!-- Term buttons added dynamically here -->
+  <button id="addTermBtn" class="term-btn" title="Add new term">+ Add Term</button>
+</div>
+
+<form id="courseForm">
+  <label for="courseName">Course Name (Uppercase only):</label>
+  <input type="text" id="courseName" maxlength="10" placeholder="E.g. PSY101" required autocomplete="off" />
+
+  <label for="credits">Credits:</label>
+  <input type="number" id="credits" min="1" max="20" placeholder="E.g. 3" required />
+
+  <label for="grade">Grade:</label>
+  <select id="grade" required>
+    <option value="">Select grade</option>
+    <option value="4">AA</option>
+    <option value="3.5">BA</option>
+    <option value="3">BB</option>
+    <option value="2.5">CB</option>
+    <option value="2">CC</option>
+    <option value="1.5">DC</option>
+    <option value="1">DD</option>
+    <option value="0">F</option>
+    <option value="PF">Pass/Fail</option>
+  </select>
+
+  <button type="submit">Add Course</button>
+</form>
+
+<!-- Previous Term Summary Form -->
+<form id="prevTermSummaryForm" title="Add previous term summary">
+  <h3>Add Previous Term Summary (without individual courses)</h3>
+  <label for="prevTermName">Term Name:</label>
+  <input type="text" id="prevTermName" maxlength="20" placeholder="E.g. Fall 2023" autocomplete="off" required />
+
+  <label for="prevTermCredits">Total Credits Earned:</label>
+  <input type="number" id="prevTermCredits" min="1" max="200" placeholder="E.g. 30" required />
+
+  <label for="prevTermGPA">Term GPA:</label>
+  <input type="number" id="prevTermGPA" min="0" max="4" step="0.01" placeholder="E.g. 3.42" required />
+
+  <button type="submit">Add Previous Term</button>
+</form>
+
+<table id="coursesTable" style="display:none;">
+  <thead>
+    <tr>
+      <th>Course</th>
+      <th>Credits</th>
+      <th>Grade</th>
+      <th>Pass/Fail</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div class="result" id="gpaResult" style="display:none;"></div>
+<div id="cumulativeGPA" style="display:none;"></div>
+
+<div style="text-align:center; margin-top:1.5em;">
+  <button id="exportCSVBtn" title="Export current term courses as CSV">Export Current Term CSV</button>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
