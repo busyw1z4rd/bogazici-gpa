@@ -13,16 +13,17 @@ const prevTermNameInput = document.getElementById('prevTermName');
 const prevTermCreditsInput = document.getElementById('prevTermCredits');
 const prevTermGPAInput = document.getElementById('prevTermGPA');
 const exportCSVBtn = document.getElementById('exportCSVBtn');
+const prevTermsBtn = document.getElementById('prevTermsBtn');
+
+let terms = {};
+let currentTerm = null;
+let termCounter = 0;
+let showingPrevTerms = false; // tracks which view is active
 
 // Force uppercase on course name input
 courseNameInput.addEventListener('input', () => {
   courseNameInput.value = courseNameInput.value.toUpperCase();
 });
-
-// Data: { termName: [ {name, credits, grade, isEditing}, ... ] or summary: { credits, gpa } }
-let terms = {};
-let currentTerm = null;
-let termCounter = 0;
 
 // Load from localStorage if any
 function loadData() {
@@ -34,6 +35,7 @@ function loadData() {
         terms = data.terms;
         termCounter = data.termCounter || Object.keys(terms).length;
         currentTerm = data.currentTerm || Object.keys(terms)[0];
+        showingPrevTerms = data.showingPrevTerms || false;
       }
     } catch {
       // ignore parse errors
@@ -43,7 +45,7 @@ function loadData() {
 
 // Save to localStorage
 function saveData() {
-  const data = { terms, termCounter, currentTerm };
+  const data = { terms, termCounter, currentTerm, showingPrevTerms };
   localStorage.setItem('bogaziciGPAData', JSON.stringify(data));
 }
 
@@ -64,36 +66,209 @@ function createTermName(num) {
   return `Term ${num}`;
 }
 
-// Render term buttons
+// Render term buttons (only normal terms)
 function renderTermButtons() {
+  // Remove all buttons except addTermBtn and prevTermsBtn
   [...termsContainer.querySelectorAll('.term-btn')].forEach(btn => {
-    if (btn !== addTermBtn) btn.remove();
+    if (btn !== addTermBtn && btn !== prevTermsBtn) btn.remove();
   });
 
-  Object.keys(terms).forEach(term => {
-    const btn = document.createElement('button');
-    btn.textContent = term;
-    btn.className = 'term-btn';
-    if (term === currentTerm) btn.classList.add('active');
-    btn.addEventListener('click', () => {
-      if (term !== currentTerm) {
-        currentTerm = term;
-        updateUI();
-      }
-    });
-    termsContainer.insertBefore(btn, addTermBtn);
+  if (showingPrevTerms) return; // hide normal terms buttons when showing previous terms
+
+  // Add buttons for normal terms only (exclude summaries)
+  Object.entries(terms).forEach(([term, data]) => {
+    if (!data.summary) {
+      const btn = document.createElement('button');
+      btn.textContent = term;
+      btn.className = 'term-btn';
+      if (term === currentTerm) btn.classList.add('active');
+      btn.addEventListener('click', () => {
+        if (term !== currentTerm) {
+          currentTerm = term;
+          updateUI();
+        }
+      });
+      termsContainer.insertBefore(btn, addTermBtn);
+    }
   });
 }
 
-// Update UI: buttons, table, GPA
-function updateUI() {
+// Show previous terms summary list
+function showPreviousTermsView() {
+  showingPrevTerms = true;
+  // Hide course form, courses table, export button, add term button
+  courseForm.style.display = 'none';
+  coursesTable.style.display = 'none';
+  exportCSVBtn.style.display = 'none';
+  addTermBtn.style.display = 'none';
+
+  // Clear GPA result, cumulative GPA will still show
+  gpaResult.style.display = 'none';
+
+  // Remove active class from term buttons (if any)
+  [...termsContainer.querySelectorAll('.term-btn')].forEach(btn => btn.classList.remove('active'));
+  prevTermsBtn.classList.add('active');
+
+  // Render previous terms summary list below termsContainer
+  renderPreviousTermsSummary();
+
+  saveData();
+}
+
+// Show normal terms view
+function showNormalTermsView() {
+  showingPrevTerms = false;
+  courseForm.style.display = 'block';
+  exportCSVBtn.style.display = 'inline-block';
+  addTermBtn.style.display = 'inline-block';
+
+  // Remove previous terms summary list if exists
+  const prevSummaryDiv = document.getElementById('prevTermsSummaryList');
+  if (prevSummaryDiv) prevSummaryDiv.remove();
+
+  prevTermsBtn.classList.remove('active');
+
+  // Restore term buttons and select currentTerm
   renderTermButtons();
+
+  // Show courses for current term
   updateTable();
+
+  saveData();
+}
+
+// Render previous terms summary list with edit and remove buttons
+function renderPreviousTermsSummary() {
+  // Remove old list if exists
+  const oldList = document.getElementById('prevTermsSummaryList');
+  if (oldList) oldList.remove();
+
+  const div = document.createElement('div');
+  div.id = 'prevTermsSummaryList';
+  div.style.marginTop = '1em';
+
+  const header = document.createElement('h3');
+  header.textContent = 'Previous Terms Summary List';
+  div.appendChild(header);
+
+  // Filter summaries
+  const summaries = Object.entries(terms).filter(([term, data]) => data.summary);
+
+  if (summaries.length === 0) {
+    const p = document.createElement('p');
+    p.textContent = 'No previous term summaries added.';
+    div.appendChild(p);
+  } else {
+    const table = document.createElement('table');
+    table.style.width = '100%';
+    table.style.borderCollapse = 'collapse';
+    table.style.marginTop = '0.5em';
+
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+      <tr style="background-color: var(--dark-blue); color:white;">
+        <th>Term Name</th>
+        <th>Total Credits</th>
+        <th>GPA</th>
+        <th>Actions</th>
+      </tr>`;
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+
+    summaries.forEach(([term, data]) => {
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid #ccc';
+
+      tr.innerHTML = `
+        <td>${term}</td>
+        <td>${data.summary.credits}</td>
+        <td>${data.summary.gpa.toFixed(2)}</td>
+        <td>
+          <button class="action-btn edit-prev-btn" data-term="${term}">Edit</button>
+          <button class="action-btn remove-prev-btn" data-term="${term}">Remove</button>
+        </td>`;
+
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    div.appendChild(table);
+  }
+
+  // Back to normal terms button
+  const backBtn = document.createElement('button');
+  backBtn.textContent = 'Back to Terms';
+  backBtn.style.marginTop = '1em';
+  backBtn.style.padding = '0.5em 1em';
+  backBtn.style.cursor = 'pointer';
+  backBtn.addEventListener('click', () => {
+    showNormalTermsView();
+  });
+
+  div.appendChild(backBtn);
+
+  termsContainer.insertAdjacentElement('afterend', div);
+}
+
+// Edit previous term summary (opens prompt dialogs)
+function editPreviousTermSummary(term) {
+  const data = terms[term].summary;
+  if (!data) return;
+
+  const newName = prompt('Edit term name:', term);
+  if (!newName) return;
+
+  const newCredits = prompt('Edit total credits:', data.credits);
+  if (!newCredits || isNaN(newCredits) || newCredits <= 0) return;
+
+  const newGPA = prompt('Edit term GPA:', data.gpa);
+  if (!newGPA || isNaN(newGPA) || newGPA < 0 || newGPA > 4) return;
+
+  // Delete old term if name changed
+  if (newName !== term) {
+    delete terms[term];
+  }
+
+  terms[newName] = {
+    summary: {
+      credits: parseFloat(newCredits),
+      gpa: parseFloat(newGPA),
+    },
+  };
+
+  renderPreviousTermsSummary();
+  saveData();
+}
+
+// Event listeners for previous terms summary edit/remove
+document.body.addEventListener('click', (e) => {
+  if (e.target.classList.contains('edit-prev-btn')) {
+    const term = e.target.getAttribute('data-term');
+    editPreviousTermSummary(term);
+  } else if (e.target.classList.contains('remove-prev-btn')) {
+    const term = e.target.getAttribute('data-term');
+    if (confirm(`Remove previous term summary "${term}"?`)) {
+      delete terms[term];
+      renderPreviousTermsSummary();
+      saveData();
+    }
+  }
+});
+
+// Update UI depending on view
+function updateUI() {
+  if (showingPrevTerms) {
+    showPreviousTermsView();
+  } else {
+    renderTermButtons();
+    updateTable();
+  }
   updateCumulativeGPA();
   saveData();
 }
 
-// Update current term table
+// Update current term table with courses and edit/remove
 function updateTable() {
   if (!currentTerm || !terms[currentTerm]) {
     coursesTable.style.display = 'none';
@@ -103,14 +278,12 @@ function updateTable() {
 
   const termData = terms[currentTerm];
   if (termData.summary) {
-    // Summary term (previous term input)
     coursesTable.style.display = 'none';
     gpaResult.style.display = 'block';
     gpaResult.textContent = `${currentTerm} Summary — GPA: ${termData.summary.gpa.toFixed(2)}, Credits: ${termData.summary.credits}`;
     return;
   }
 
-  // Normal term with courses array
   if (!termData.courses || termData.courses.length === 0) {
     coursesTable.style.display = 'none';
     gpaResult.style.display = 'none';
@@ -216,7 +389,7 @@ function updateCumulativeGPA() {
   cumulativeGPA.textContent = `Cumulative GPA: ${cumGPA.toFixed(2)} (Credits counted: ${totalCreditsCounted} / Total credits: ${totalCreditsAll})`;
 }
 
-// Handle table button clicks (edit, save, cancel, remove)
+// Table buttons events (edit/save/cancel/remove)
 coursesBody.addEventListener('click', e => {
   const target = e.target;
   const index = parseInt(target.getAttribute('data-index'));
@@ -291,6 +464,7 @@ addTermBtn.addEventListener('click', () => {
   const newTermName = createTermName(termCounter);
   terms[newTermName] = { courses: [] };
   currentTerm = newTermName;
+  showingPrevTerms = false;
   updateUI();
 });
 
@@ -328,10 +502,13 @@ prevTermSummaryForm.addEventListener('submit', e => {
     return;
   }
 
+  // Add summary term, do not mix with normal terms
   terms[name] = { summary: { credits, gpa } };
-  currentTerm = name;
-  termCounter = Math.max(termCounter, Object.keys(terms).length);
-  updateUI();
+
+  currentTerm = name;  // For convenience, but does not show courses
+
+  showingPrevTerms = true;
+  showPreviousTermsView();
 
   prevTermSummaryForm.reset();
 });
@@ -340,6 +517,10 @@ prevTermSummaryForm.addEventListener('submit', e => {
 exportCSVBtn.addEventListener('click', () => {
   if (!currentTerm || !terms[currentTerm]) {
     alert('No term selected.');
+    return;
+  }
+  if (showingPrevTerms) {
+    alert('Cannot export CSV while viewing previous terms summary.');
     return;
   }
   const termData = terms[currentTerm];
@@ -366,4 +547,11 @@ exportCSVBtn.addEventListener('click', () => {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+});
+
+// Prev Terms Summary button click
+prevTermsBtn.addEventListener('click', () => {
+  if (!showingPrevTerms) {
+    showPreviousTermsView();
+  }
 });
