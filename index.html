@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bogazici GPA Calculator - Advanced</title>
 <link rel="stylesheet" href="styles.css" />
-
 <style>
   #gandalfGif {
     max-width: 300px;
@@ -67,7 +66,6 @@
     fill: white;
   }
 </style>
-
 </head>
 <body>
 
@@ -116,8 +114,8 @@
   <h1>Bogazici GPA Calculator - Advanced</h1>
 
   <div id="termsContainer" style="max-width:700px; margin: 0 auto 1em;">
-    <button id="addTermBtn" class="term-btn" title="Add new term">+ Add Term</button>
-    <button id="prevTermsBtn" class="term-btn" title="Show Previous Terms Summary" style="background:#666; margin-left:10px;">
+    <button id="addTermBtn" class="term-btn" title="Add new term" type="button">+ Add Term</button>
+    <button id="prevTermsBtn" class="term-btn" title="Show Previous Terms Summary" style="background:#666; margin-left:10px;" type="button">
       Previous Terms Summary
     </button>
   </div>
@@ -176,22 +174,17 @@
   <div class="result" id="gpaResult" style="display:none; max-width:700px; margin: 1em auto; font-weight:bold;"></div>
   <div id="cumulativeGPA" style="display:none; max-width:700px; margin: 1em auto; font-weight:600;"></div>
 
-  <div style="text-align:center; max-width:700px; margin: 1.5em auto;">
-    <button id="exportCSVBtn" title="Export current term courses as CSV">Export Current Term CSV</button>
-  </div>
-  <div style="text-align:center; max-width:700px; margin: 1em auto;">
-    <button id="clearDataBtn" title="Clear all saved data and reset">Clear All Data</button>
-  </div>
+
 
   <!-- Music Controls -->
   <div id="musicControls" aria-label="Music controls">
-    <button id="pausePlayBtn" aria-label="Play music" disabled>
+    <button id="pausePlayBtn" aria-label="Play music" disabled type="button">
       <!-- Play icon -->
       <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
       <!-- Pause icon -->
       <svg id="pauseIcon" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
     </button>
-    <button id="nextTrackBtn" aria-label="Next track" disabled>
+    <button id="nextTrackBtn" aria-label="Next track" disabled type="button">
       <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
     </button>
   </div>
@@ -200,164 +193,7 @@
 
 <audio id="audioPlayer" preload="auto" style="display:none;"></audio>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Shuffle helper function
-  function shuffle(array) {
-    const arr = array.slice();
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }
-
-  // Local audio playlist (put files in musics/ folder)
-  const playlist = [
-    'musics/music_1.mp3',
-    'musics/music_2.mp3',
-    'musics/music_3.mp3',
-    'musics/music_4.mp3',
-    'musics/music_5.mp3',
-    'musics/music_6.mp3',
-    'musics/music_7.mp3'
-  ];
-
-  const audioPlayer = document.getElementById('audioPlayer');
-  const pausePlayBtn = document.getElementById('pausePlayBtn');
-  const nextTrackBtn = document.getElementById('nextTrackBtn');
-  const playIcon = document.getElementById('playIcon');
-  const pauseIcon = document.getElementById('pauseIcon');
-
-  let currentPlaylistOrder = [];
-  let currentIndex = 0;
-  let isPlaying = false;
-  let isFirstPassPlayed = false;
-
-  function startPlaylist() {
-    currentPlaylistOrder = shuffle(playlist);
-    currentIndex = 0;
-    playCurrentIndex();
-    enableMusicControls(true);
-  }
-
-  function playCurrentIndex() {
-    if (currentPlaylistOrder.length === 0) return;
-    audioPlayer.src = currentPlaylistOrder[currentIndex];
-    audioPlayer.play();
-    isPlaying = true;
-    updatePlayPauseButton();
-  }
-
-  function playNextInPlaylist() {
-    currentIndex++;
-    if (currentIndex >= currentPlaylistOrder.length) {
-      currentPlaylistOrder = shuffle(playlist);
-      currentIndex = 0;
-    }
-    playCurrentIndex();
-  }
-
-  function togglePlayPause() {
-    if (isPlaying) {
-      audioPlayer.pause();
-      isPlaying = false;
-    } else {
-      audioPlayer.play();
-      isPlaying = true;
-    }
-    updatePlayPauseButton();
-  }
-
-  function updatePlayPauseButton() {
-    if (isPlaying) {
-      playIcon.style.display = 'none';
-      pauseIcon.style.display = 'inline';
-      pausePlayBtn.setAttribute('aria-label', 'Pause music');
-    } else {
-      playIcon.style.display = 'inline';
-      pauseIcon.style.display = 'none';
-      pausePlayBtn.setAttribute('aria-label', 'Play music');
-    }
-  }
-
-  function enableMusicControls(enable) {
-    pausePlayBtn.disabled = !enable;
-    nextTrackBtn.disabled = !enable;
-    pausePlayBtn.classList.toggle('enabled', enable);
-    nextTrackBtn.classList.toggle('enabled', enable);
-  }
-
-  pausePlayBtn.addEventListener('click', togglePlayPause);
-  nextTrackBtn.addEventListener('click', () => {
-    if (isFirstPassPlayed) {
-      playNextInPlaylist();
-    }
-  });
-
-  audioPlayer.addEventListener('ended', () => {
-    if (isFirstPassPlayed) {
-      playNextInPlaylist();
-    }
-  });
-
-  // Quiz gating logic
-  const questions = document.querySelectorAll('#quiz .question');
-  const quizResult = document.getElementById('quizResult');
-  const gandalfGif = document.getElementById('gandalfGif');
-  const gandalfMessage = document.getElementById('gandalfMessage');
-  const passPhoto = document.getElementById('passPhoto');
-  const failAudio = document.getElementById('failAudio');
-  const calculatorSection = document.getElementById('calculatorSection');
-
-  let currentQuestion = 0;
-  let score = 0;
-
-  questions.forEach(question => {
-    const buttons = question.querySelectorAll('.quiz-btn');
-    buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (btn.getAttribute('data-answer') === 'true') {
-          score++;
-        }
-        question.style.display = 'none';
-        currentQuestion++;
-        if (currentQuestion < questions.length) {
-          questions[currentQuestion].style.display = 'block';
-        } else {
-          showResult();
-        }
-      });
-    });
-  });
-
-  function showResult() {
-    if (score >= 2) {
-      quizResult.textContent = `You scored ${score} out of ${questions.length}. Perfect! You are a REAL Boğaziçi student! 🎉`;
-      gandalfGif.style.display = 'none';
-      gandalfMessage.textContent = '';
-      passPhoto.style.display = 'block';
-      failAudio.pause();
-      failAudio.currentTime = 0;
-      calculatorSection.style.display = 'block';
-
-      isFirstPassPlayed = true;
-      startPlaylist();
-
-    } else {
-      quizResult.textContent = `You scored ${score} out of ${questions.length}. YOU SHALL NOT PASS! 🧙‍♂️`;
-      gandalfGif.style.display = 'block';
-      gandalfMessage.textContent = 'You need at least 2 correct answers to access the GPA Calculator.';
-      passPhoto.style.display = 'none';
-      calculatorSection.style.display = 'none';
-
-      isFirstPassPlayed = false;
-      enableMusicControls(false);
-      failAudio.play();
-    }
-  }
-});
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
